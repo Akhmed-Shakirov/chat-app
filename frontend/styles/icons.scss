@@ -1,0 +1,36 @@
+i.icon {
+    display: inline-block;
+    background: currentColor;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+
+    transition: .2s;
+
+    &.up {
+      transform: rotate(180deg);
+    }
+
+    &.down {
+      transform: rotate(-180deg);
+    }
+
+    &.left {
+      transform: rotate(-90deg);
+    }
+
+    &.right {
+      transform: rotate(90deg);
+    }
+}
+
+.icon {
+    height: 20px;
+    width: 20px;
+}
+
+.test {
+    @extend i, .icon;
+    -webkit-mask-image: url(/icons/test.svg);
+    mask-image: url(/icons/test.svg);
+}
