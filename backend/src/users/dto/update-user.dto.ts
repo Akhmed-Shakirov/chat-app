@@ -27,5 +27,9 @@ export class UpdateUserDto extends PartialType(CreateUserDto) {
   })
   readonly password: string;
   readonly applications: Array<{ login: string; _id: string }>;
-  readonly friends: Array<{ login: string; _id: string }>;
+  readonly friends: Array<{
+    login: string;
+    _id: string;
+    chat: string;
+  }>;
 }

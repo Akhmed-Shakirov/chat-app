@@ -5,5 +5,9 @@ export class User {
   name: string;
   password: string;
   applications: Array<{ login: string; _id: string }>;
-  friends: Array<{ login: string; _id: string }>;
+  friends: Array<{
+    login: string;
+    _id: string;
+    chat: string;
+  }>;
 }

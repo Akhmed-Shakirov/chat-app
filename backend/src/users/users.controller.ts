@@ -67,4 +67,11 @@ export class UsersController {
     const { userId } = req.user;
     return this.usersService.friends(id, userId);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('friends/:id')
+  removeFromFriends(@Request() req, @Param('id') id: string) {
+    const { userId } = req.user;
+    return this.usersService.removeFromFriends(id, userId);
+  }
 }

@@ -4,15 +4,19 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
+import { MessagesService } from '../messages/messages.service';
 
 @Injectable()
 export class UsersService {
   [x: string]: any;
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private readonly messagesService: MessagesService,
+  ) {}
 
   uniqueArray = (arr) => {
     return arr.reduce((accumulator, currentValue) => {
-      if (!accumulator.some((item) => item.login === currentValue.login)) {
+      if (!accumulator.some((item) => item._id === currentValue._id)) {
         accumulator.push(currentValue);
       }
       return accumulator;
@@ -92,6 +96,8 @@ export class UsersService {
   }
 
   async applications(id: string, myId: string): Promise<{ message: string }> {
+    if (id == myId) throw new HttpException('The same id ', 400);
+
     const i_am = await this.findOne(myId).then((res) => res);
     const sein = await this.findOne(id).then((res) => res);
 
@@ -122,7 +128,9 @@ export class UsersService {
     }
   }
 
-  async friends(id: string, myId): Promise<{ message: string }> {
+  async friends(id: string, myId: string): Promise<{ message: string }> {
+    if (id == myId) throw new HttpException('The same id ', 400);
+
     const i_am = await this.findOne(myId).then((res) => res);
     const sein = await this.findOne(id).then((res) => res);
 
@@ -132,18 +140,58 @@ export class UsersService {
 
     if (me_applications.filter((item) => item._id === id)?.length) {
       me_applications = me_applications.filter((item) => item._id !== id);
-      me_friends.push({ login: sein.login, _id: id });
+
+      // const chatId = '123123';
+      const chatId = await this.messagesService
+        .create({ chats: [] })
+        .then((res) => res._id);
+
+      me_friends.push({ login: sein.login, _id: id, id_chat: chatId });
       const me_update = {
         applications: this.uniqueArray(me_applications),
         friends: this.uniqueArray(me_friends),
       };
       await this.userModel.findByIdAndUpdate(myId, me_update);
 
-      his_friends.push({ login: i_am.login, _id: myId });
-      const his_update = { friends: his_friends };
+      his_friends.push({ login: i_am.login, _id: myId, id_chat: chatId });
+      const his_update = { friends: this.uniqueArray(his_friends) };
       await this.userModel.findByIdAndUpdate(id, his_update);
 
       throw new HttpException('Application successfully accepted', 201);
+    } else {
+      throw new HttpException('Server problems', 501);
+    }
+  }
+
+  async removeFromFriends(
+    id: string,
+    myId: string,
+  ): Promise<{ message: string }> {
+    if (id == myId) throw new HttpException('The same id ', 400);
+
+    const i_am = await this.findOne(myId).then((res) => res);
+    const sein = await this.findOne(id).then((res) => res);
+
+    let me_friends = JSON.parse(JSON.stringify(i_am.friends));
+    let his_friends = JSON.parse(JSON.stringify(sein.friends));
+
+    if (me_friends.filter((item) => item._id === id)?.length) {
+      const chatId = me_friends.find((item) => item._id === id).id_chat;
+
+      await this.messagesService.remove(chatId);
+
+      me_friends = me_friends.filter((item) => item._id !== id);
+      const me_update = { friends: this.uniqueArray(me_friends) };
+      await this.userModel.findByIdAndUpdate(myId, me_update);
+
+      his_friends = his_friends.filter((item) => item._id !== myId);
+      const his_update = { friends: this.uniqueArray(his_friends) };
+      await this.userModel.findByIdAndUpdate(id, his_update);
+
+      throw new HttpException(
+        'User successfully removed from friends list',
+        201,
+      );
     } else {
       throw new HttpException('Server problems', 501);
     }
