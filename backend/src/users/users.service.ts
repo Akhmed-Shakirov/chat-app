@@ -128,7 +128,7 @@ export class UsersService {
     }
   }
 
-  async friends(id: string, myId: string): Promise<{ message: string }> {
+  async acceptFriend(id: string, myId: string): Promise<{ message: string }> {
     if (id == myId) throw new HttpException('The same id ', 400);
 
     const i_am = await this.findOne(myId).then((res) => res);
@@ -163,10 +163,7 @@ export class UsersService {
     }
   }
 
-  async removeFromFriends(
-    id: string,
-    myId: string,
-  ): Promise<{ message: string }> {
+  async removeFriends(id: string, myId: string): Promise<{ message: string }> {
     if (id == myId) throw new HttpException('The same id ', 400);
 
     const i_am = await this.findOne(myId).then((res) => res);

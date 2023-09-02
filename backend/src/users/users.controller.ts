@@ -54,6 +54,7 @@ export class UsersController {
     return this.usersService.remove(id);
   }
 
+  @ApiTags('Friends')
   @UseGuards(JwtAuthGuard)
   @Post('applications/:id')
   applications(@Request() req, @Param('id') id: string) {
@@ -61,17 +62,19 @@ export class UsersController {
     return this.usersService.applications(id, userId);
   }
 
+  @ApiTags('Friends')
   @UseGuards(JwtAuthGuard)
   @Post('friends/:id')
-  friends(@Request() req, @Param('id') id: string) {
+  acceptFriend(@Request() req, @Param('id') id: string) {
     const { userId } = req.user;
     return this.usersService.friends(id, userId);
   }
 
+  @ApiTags('Friends')
   @UseGuards(JwtAuthGuard)
   @Delete('friends/:id')
-  removeFromFriends(@Request() req, @Param('id') id: string) {
+  removeFriends(@Request() req, @Param('id') id: string) {
     const { userId } = req.user;
-    return this.usersService.removeFromFriends(id, userId);
+    return this.usersService.removeFriends(id, userId);
   }
 }
