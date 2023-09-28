@@ -16,12 +16,12 @@ export class AuthService {
     if (refreshStr) {
       const refreshToken = await this.retrieveRefreshToken(refreshStr);
       if (!refreshToken) {
-        return undefined;
+        throw new HttpException('Invalid refresh token', 401);
       }
 
       const user = await this.userService.findOne(refreshToken.userId);
       if (!user) {
-        return undefined;
+        throw new HttpException('Invalid refresh token', 401);
       }
 
       const accessToken = {

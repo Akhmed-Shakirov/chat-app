@@ -67,7 +67,7 @@ export class UsersController {
   @Post('friends/:id')
   acceptFriend(@Request() req, @Param('id') id: string) {
     const { userId } = req.user;
-    return this.usersService.friends(id, userId);
+    return this.usersService.acceptFriend(id, userId);
   }
 
   @ApiTags('Friends')
