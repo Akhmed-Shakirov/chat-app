@@ -4,7 +4,7 @@ import { UsersModule } from './users/users.module';
 import { MessagesModule } from './messages/messages.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule } from '@nestjs/config';
-import { ChatWebsocket } from './chat/chat.module';
+import { ChatModule } from './chat/chat.module';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
@@ -14,7 +14,7 @@ import { AuthModule } from './auth/auth.module';
     AuthModule,
     UsersModule,
     MessagesModule,
-    ChatWebsocket,
+    ChatModule,
   ],
   controllers: [AppController],
 })

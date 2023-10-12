@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next'
-import io from 'socket.io-client';
+import { io } from 'socket.io-client'
 // Next
 
 // UI
@@ -30,42 +30,68 @@ export default function IndexPage() {
 
     const [users, setUsers] = useState<User[]>([])
 
+    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NGQzNTVjMzY4MTExNDM0YWMwMTI0ZDkiLCJpYXQiOjE2OTY1NzE2MDAsImV4cCI6MTY5NjU3NTIwMH0.ZJRaapdl7ZQBtKWnU2Ec8IkzSLXh4qZIB0XguDVJJRU'
+
     const getData = async () => {
-        const data = await fetch('http://localhost:8000/users').then(res => res.json())
-        setUsers(data)
+        // const data = await fetch('http://localhost:8000/users', { headers: { "Content-Type": "application/json", 'Authorization': `Bearer ${token}` } } ).then(res => res.json())
+        // setUsers(data)
     }
 
     useEffect( () => {
         getData()
     }, [])
 
+
     interface Messages {
         text: string;
     }
 
+    // const [messages, setMessages] = useState<Messages[]>([])
+    // const [inputValue, setInputValue] = useState('')
+    // const [socket, setSocket] = useState<any>(null)
+    // useEffect(() => {
+    //     const newSocket = io('http://localhost:8000')
+    //     setSocket(newSocket)
 
-    const [messages, setMessages] = useState<Messages[]>([])
-    const [inputValue, setInputValue] = useState('')
-    const [socket, setSocket] = useState<any>(null)
+    //     newSocket.on('message', message => {
+    //         console.log(message)
+    //         setMessages(oldMessages => [...oldMessages, message])
+    //     })
+
+    //     return () => {
+    //         newSocket.disconnect()
+    //     }
+    // }, [])
+    // const handleSendMessage = () => {
+    //     socket.emit('message', inputValue)
+    //     setInputValue('')
+    // }
+
+
+    const [message, setMessage] = useState('');
+    const [chatMessages, setChatMessages] = useState([]);
 
     useEffect(() => {
-        const newSocket = io('http://localhost:8000')
-        setSocket(newSocket)
+        const socket = io('/socket.io'); // Замените на адрес вашего WebSocket сервера
+        socket.on('message', (message) => {
+          setChatMessages([...chatMessages, message]);
+        });
 
-        newSocket.on('message', message => {
-            console.log(message)
-            setMessages(oldMessages => [...oldMessages, message])
-        })
-
+        // Закрыть соединение при размонтировании компонента
         return () => {
-            newSocket.disconnect()
-        }
-    }, [])
+          socket.disconnect();
+        };
+      }, [chatMessages]);
 
-    const handleSendMessage = () => {
-        socket.emit('message', inputValue)
-        setInputValue('')
-    }
+      const sendMessage = () => {
+        const socket = io('/socket.io'); // Замените на адрес вашего WebSocket сервера
+        const roomId = 'YOUR_ROOM_ID'; // Замените на уникальный ID комнаты
+        socket.emit('joinRoom', roomId);
+        socket.emit('message', { roomId, message });
+        setMessage('');
+    };
+
+
 
     return (
         <>
@@ -76,17 +102,18 @@ export default function IndexPage() {
             <section>
 
                 <div>
-                    {messages.map((message, index) => (
-                        <div key={index}>{message.text}</div>
-                    ))}
-                </div>
-                <div>
+                    <div>
+                        {chatMessages.map((msg, index) => (
+                            <div key={index}>{msg}</div>
+                        ))}
+                    </div>
                     <input
                         type="text"
-                        value={inputValue}
-                        onChange={event => setInputValue(event.target.value)}
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        placeholder="Введите сообщение..."
                     />
-                    <button onClick={handleSendMessage}>Send</button>
+                    <button onClick={sendMessage}>Отправить</button>
                 </div>
 
             </section>
