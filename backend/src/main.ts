@@ -4,6 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { createServer } from 'http';
 import * as cors from 'cors';
+import * as childProcess from 'child_process';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { cors: true });
@@ -23,6 +24,9 @@ async function bootstrap() {
   app.useWebSocketAdapter(new IoAdapter(httpServer));
 
   await app.listen(8000);
+
+  // childProcess.exec('open http://localhost:8000/api/');
+  // childProcess.exec('start http://localhost:8000/api/');
 }
 
 bootstrap();
