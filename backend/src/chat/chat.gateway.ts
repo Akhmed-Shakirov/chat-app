@@ -7,36 +7,52 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { MessagesService } from '../messages/messages.service';
 
-@WebSocketGateway()
+@WebSocketGateway(8001)
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  constructor(
+    private readonly messagesService: MessagesService
+  ) {}
+
   @WebSocketServer()
   server: Server;
-
+  
   private activeSockets: Map<string, Socket> = new Map();
 
   handleConnection(client) {
-    console.log(`Client connected: ${client.id}`);
+    // console.log(`Client connected: ${client.id}`);
   }
 
   handleDisconnect(client) {
-    console.log(`Client disconnected: ${client.id}`);
+    // console.log(`Client disconnected: ${client.id}`);
   }
 
   @SubscribeMessage('joinRoom')
   handleJoinRoom(client: Socket, roomId: string) {
     client.join(roomId);
     this.activeSockets.set(roomId, client);
-    console.log(1);
   }
 
   @SubscribeMessage('message')
-  handleMessage(client: Socket, payload: { roomId: string; message: string }) {
-    const { roomId, message } = payload;
-    const recipientSocket = this.activeSockets.get(roomId);
-    if (recipientSocket) {
-      recipientSocket.emit('message', message);
-      console.log(2);
+  async handleMessage(client: Socket, payload: { roomId: string; message: string | Array<{ id: number; login: string; date: string; message: string }>, login: string }) {
+    const { roomId, message, login } = payload
+
+    if (Array.isArray(message)) {
+      await this.messagesService.update(roomId, { chats: message })
+      
+      this.server.to(roomId).emit('message', true)
+    } else {
+      
+    const data = await this.messagesService.findOne(roomId)
+
+      const chat = { message, login, date: `${new Date()}`, id: data?.chats?.length + 1 }
+  
+      const newChats = [ ...data.chats, chat ]
+  
+      await this.messagesService.update(roomId, { chats: newChats })
+  
+      this.server.to(roomId).emit('message', chat)
     }
   }
 }

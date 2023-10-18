@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next'
-import { io } from 'socket.io-client'
+import io from 'socket.io-client'
 // Next
 
 // UI
@@ -21,73 +21,75 @@ export default function IndexPage() {
     const { locale, locales } = useRouter()
 
     interface User {
-        login: string;
-        name: string;
-        password: string;
-        __v?: number;
-        _id: string;
+        login: string
+        name: string
+        password: string
+        __v?: number
+        _id: string
     }
 
     const [users, setUsers] = useState<User[]>([])
 
-    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NGQzNTVjMzY4MTExNDM0YWMwMTI0ZDkiLCJpYXQiOjE2OTY1NzE2MDAsImV4cCI6MTY5NjU3NTIwMH0.ZJRaapdl7ZQBtKWnU2Ec8IkzSLXh4qZIB0XguDVJJRU'
 
-    const getData = async () => {
-        // const data = await fetch('http://localhost:8000/users', { headers: { "Content-Type": "application/json", 'Authorization': `Bearer ${token}` } } ).then(res => res.json())
-        // setUsers(data)
+
+    interface Messages {
+        text: string
     }
 
-    useEffect( () => {
+
+    
+    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NGQzNTVjMzY4MTExNDM0YWMwMTI0ZDkiLCJpYXQiOjE2OTc2MTYyODQsImV4cCI6MTY5NzYxOTg4NH0.h2q0QPfrtJjUYpMKlQwfrNtL_ZYsXcaVR41wm5S1Zm4'
+
+
+    const [message, setMessage] = useState('')
+    const [chatMessages, setChatMessages] = useState<{ id: number; login: string; date: string; message: string }[]>([])
+    const [socket, setSocket] = useState();
+    const [roomId, setRoomId] = useState('652f91e3354a4c6f924d7893');
+
+    
+    const getData = async () => {
+        const data = await fetch('http://localhost:8000/messages/' + roomId, { headers: { "Content-Type": "application/json", 'Authorization': `Bearer ${token}` } } ).then(res => res.json())
+        setChatMessages(data?.chats?.length ? data?.chats : [])
+    }
+
+    useEffect(() => {
         getData()
     }, [])
 
 
-    interface Messages {
-        text: string;
-    }
-
-    // const [messages, setMessages] = useState<Messages[]>([])
-    // const [inputValue, setInputValue] = useState('')
-    // const [socket, setSocket] = useState<any>(null)
-    // useEffect(() => {
-    //     const newSocket = io('http://localhost:8000')
-    //     setSocket(newSocket)
-
-    //     newSocket.on('message', message => {
-    //         console.log(message)
-    //         setMessages(oldMessages => [...oldMessages, message])
-    //     })
-
-    //     return () => {
-    //         newSocket.disconnect()
-    //     }
-    // }, [])
-    // const handleSendMessage = () => {
-    //     socket.emit('message', inputValue)
-    //     setInputValue('')
-    // }
-
-
-    const [message, setMessage] = useState('');
-    const [chatMessages, setChatMessages] = useState([]);
-
     useEffect(() => {
-        const socket = io('/socket.io'); // Замените на адрес вашего WebSocket сервера
-        socket.on('message', (message) => {
-          setChatMessages([...chatMessages, message]);
+        const newSocket = io('http://localhost:8001', {
+            transports: ['websocket']
+        })
+        setSocket(newSocket);
+
+        newSocket.emit('joinRoom', roomId);
+
+        newSocket.on('message', (newMessage) => {
+            if (typeof newMessage === 'boolean') {
+                getData()
+            } else {
+                setChatMessages(arr => [...arr, newMessage]);
+                // setChatMessages([...chatMessages, newMessage?.message]);
+            }
         });
 
-        // Закрыть соединение при размонтировании компонента
         return () => {
-          socket.disconnect();
+            newSocket.off('message');
+            newSocket.disconnect();
         };
-      }, [chatMessages]);
+    }, [roomId]);
 
-      const sendMessage = () => {
-        const socket = io('/socket.io'); // Замените на адрес вашего WebSocket сервера
-        const roomId = 'YOUR_ROOM_ID'; // Замените на уникальный ID комнаты
-        socket.emit('joinRoom', roomId);
-        socket.emit('message', { roomId, message });
+
+    const sendMessage = () => {
+        const messageData = {
+            roomId,
+            message,
+            login: 'Alex',
+        };
+
+        socket.emit('message', messageData);
+        // socket.emit('message', message);
         setMessage('');
     };
 
@@ -100,11 +102,19 @@ export default function IndexPage() {
             </Head>
 
             <section>
+                <input
+                    type="text"
+                    value={roomId}
+                    onChange={(e) => setRoomId(e.target.value)}
+                    placeholder="Id chat..."
+                />
+
+                <br />
 
                 <div>
                     <div>
-                        {chatMessages.map((msg, index) => (
-                            <div key={index}>{msg}</div>
+                        {chatMessages.map((msg) => (
+                            <pre key={msg?.id}>{msg?.message}</pre>
                         ))}
                     </div>
                     <input
