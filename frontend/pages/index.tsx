@@ -30,67 +30,56 @@ export default function IndexPage() {
 
     const [users, setUsers] = useState<User[]>([])
 
-
-
-    interface Messages {
-        text: string
-    }
-
-
-    
     const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NGQzNTVjMzY4MTExNDM0YWMwMTI0ZDkiLCJpYXQiOjE2OTc2MTYyODQsImV4cCI6MTY5NzYxOTg4NH0.h2q0QPfrtJjUYpMKlQwfrNtL_ZYsXcaVR41wm5S1Zm4'
-
-
-    const [message, setMessage] = useState('')
-    const [chatMessages, setChatMessages] = useState<{ id: number; login: string; date: string; message: string }[]>([])
-    const [socket, setSocket] = useState();
     const [roomId, setRoomId] = useState('652f91e3354a4c6f924d7893');
 
+    const [chatMessages, setChatMessages] = useState<{ id: number; login: string; date: string; message: string }[]>([])
+    const [message, setMessage] = useState('')
     
-    const getData = async () => {
+    const getChatMessages = async () => {
         const data = await fetch('http://localhost:8000/messages/' + roomId, { headers: { "Content-Type": "application/json", 'Authorization': `Bearer ${token}` } } ).then(res => res.json())
         setChatMessages(data?.chats?.length ? data?.chats : [])
     }
 
     useEffect(() => {
-        getData()
+        getChatMessages()
     }, [])
 
 
     useEffect(() => {
-        const newSocket = io('http://localhost:8001', {
+        const socket = io('http://localhost:8001', {
             transports: ['websocket']
         })
-        setSocket(newSocket);
 
-        newSocket.emit('joinRoom', roomId);
-
-        newSocket.on('message', (newMessage) => {
+        socket.emit('joinRoom', roomId);
+        socket.on('message', (newMessage) => {
             if (typeof newMessage === 'boolean') {
-                getData()
+                getChatMessages()
             } else {
                 setChatMessages(arr => [...arr, newMessage]);
-                // setChatMessages([...chatMessages, newMessage?.message]);
             }
-        });
+        })
 
         return () => {
-            newSocket.off('message');
-            newSocket.disconnect();
-        };
-    }, [roomId]);
+            socket.off('message')
+            socket.disconnect()
+        }
+    }, [roomId])
 
 
     const sendMessage = () => {
+        const socket = io('http://localhost:8001', {
+            transports: ['websocket']
+        })
+
         const messageData = {
             roomId,
             message,
-            login: 'Alex',
-        };
+            login: 'Alex'
+        }
 
-        socket.emit('message', messageData);
-        // socket.emit('message', message);
-        setMessage('');
+        socket.emit('message', messageData)
+        setMessage('')
     };
 
 
