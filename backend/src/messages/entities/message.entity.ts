@@ -1,4 +1,11 @@
 export class Message {
   _id: string;
-  chats: Array<{id: number, login: string; date: string; message: string }>;
+  chats: Array<{
+    id: number
+    login: string
+    date: string
+    message: string
+    isEdit?: boolean
+    isNew?: boolean
+  }>
 }
